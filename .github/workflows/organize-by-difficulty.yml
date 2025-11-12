@@ -4,6 +4,9 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   organize:
     runs-on: ubuntu-latest
@@ -16,7 +19,6 @@ jobs:
           set -euo pipefail
           mkdir -p Easy Medium Hard
 
-          # find problem dirs that are NOT already inside Easy/Medium/Hard
           mapfile -t DIRS < <(git ls-files -z | xargs -0 -n1 dirname | sort -u \
             | grep -Ev '^(Easy|Medium|Hard)(/|$)')
 
@@ -26,7 +28,6 @@ jobs:
             readme="$d/README.md"
             [[ -f "$readme" ]] || continue
 
-            # detect difficulty from HTML tags
             if grep -qi '<h3>Easy</h3>' "$readme"; then target="Easy"
             elif grep -qi '<h3>Medium</h3>' "$readme"; then target="Medium"
             elif grep -qi '<h3>Hard</h3>' "$readme"; then target="Hard"
@@ -34,9 +35,7 @@ jobs:
               continue
             fi
 
-            # skip if already under correct folder
             [[ "$d" == "$target"* ]] && continue
-
             mkdir -p "$target"
             git mv "$d" "$target/" && changed=1
           done
@@ -45,7 +44,9 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git commit -m "chore: organize problems by difficulty"
-            git push
+
+            branch="${GITHUB_REF_NAME:-main}"
+            git push origin HEAD:"$branch"
           else
             echo "No reorganization needed."
           fi

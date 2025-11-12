@@ -22,20 +22,19 @@ jobs:
 
           changed=0
           for d in "${DIRS[@]}"; do
-            # skip .github and root files
             [[ "$d" == "." || "$d" == ".github"* ]] && continue
-
             readme="$d/README.md"
             [[ -f "$readme" ]] || continue
 
-            if grep -qi '^difficulty:\s*easy' "$readme"; then target="Easy"
-            elif grep -qi '^difficulty:\s*medium' "$readme"; then target="Medium"
-            elif grep -qi '^difficulty:\s*hard' "$readme"; then target="Hard"
+            # detect difficulty from HTML tags
+            if grep -qi '<h3>Easy</h3>' "$readme"; then target="Easy"
+            elif grep -qi '<h3>Medium</h3>' "$readme"; then target="Medium"
+            elif grep -qi '<h3>Hard</h3>' "$readme"; then target="Hard"
             else
               continue
             fi
 
-            # if already under target, skip
+            # skip if already under correct folder
             [[ "$d" == "$target"* ]] && continue
 
             mkdir -p "$target"
